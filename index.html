@@ -43,6 +43,11 @@
             font-weight: 600;
             color: #475569;
             margin-bottom: 4px;
+            display: block; 
+            /* Fixed height to accommodate two lines of text, ensuring inputs align */
+            height: 48px; 
+            box-sizing: border-box;
+            overflow: hidden; /* Hide overflow if text slightly exceeds height */
         }
         .input-group input, .input-group select {
             width: 100%;
@@ -200,7 +205,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div class="input-group">
                     <label for="arrivalRate">Average Arrival Rate (λ, customers/min):</label>
-                    <input type="number" id="arrivalRate" value="25" min="0.1" step="0.1" class="rounded-lg">
+                    <input type="number" id="arrivalRate" value="24" min="0.1" step="0.1" class="rounded-lg">
                 </div>
                 <div class="input-group">
                     <label for="serviceRate">Average Service Rate (μ, customers/min/server):</label>
@@ -270,11 +275,11 @@
                     <div id="customersInService" class="metric-value">0</div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-label">Avg. Wait Time in Queue (min):</div>
+                    <div class="metric-label">Avg. Wait Time in Queue (Wq, min):</div>
                     <div id="avgWaitTime" class="metric-value">0.00</div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-label">Avg. Time in System (min):</div>
+                    <div class="metric-label">Avg. Time in System (Ws, min):</div>
                     <div id="avgTimeInSystem" class="metric-value">0.00</div>
                 </div>
                 <div class="metric-box">
@@ -282,7 +287,7 @@
                     <div id="avgCustomersInQueueDisplay" class="metric-value">0.00</div>
                 </div>
                  <div class="metric-box">
-                    <div class="metric-label">Avg. Customers in System (L):</div>
+                    <div class="metric-label">Avg. Customers in System (Ls):</div>
                     <div id="avgCustomersInSystemDisplay" class="metric-value">0.00</div>
                 </div>
                 <div class="metric-box">
@@ -405,7 +410,7 @@
         let lastMetricUpdateTime = 0; // The last time metrics were updated for accumulation calculations
 
         // Input Parameters (rates are per minute) - Default values
-        let avgArrivalRatePerMin = 25; // λ (lambda) - Default changed to 25
+        let avgArrivalRatePerMin = 24; // λ (lambda) - Default changed to 24
         let avgServiceRatePerMinPerServer = 30; // μ (mu)
         let numServers = 1; // S
         let simSpeedMsPerSec = 10; // Milliseconds per simulation second (visual speed) - Default changed to 10
@@ -444,7 +449,7 @@
         let serversGroup; // The <g> element for servers
         const SVG_NS = "http://www.w3.org/2000/svg"; // SVG Namespace constant
 
-        // Constants for visualization layout (pixels in SVG viewBox)
+        // Fixed Layout Constants (pixels in SVG viewBox)
         const SYSTEM_BORDER_X = 50;
         const SYSTEM_BORDER_Y = 50;
         const SYSTEM_BORDER_WIDTH = 700;
@@ -458,18 +463,16 @@
         const DOOR_WIDTH = 10;
         const DOOR_HEIGHT = 50;
 
-        const CUSTOMER_RADIUS = 20;
-
+        const CUSTOMER_RADIUS = 20; // Fixed customer radius
         const QUEUE_LINE_Y_POS = CENTER_LINE_Y + 70;
         const QUEUE_CUSTOMER_Y_POS = QUEUE_LINE_Y_POS - CUSTOMER_RADIUS - 5;
-
-        // Queue grows from right to left, towards the entry point. Head of the queue is QUEUE_FRONT_X.
         const QUEUE_FRONT_X = 550;
         const QUEUE_SPACING_X = CUSTOMER_RADIUS * 2.5;
 
-        const SERVER_RECT_WIDTH = 60;
-        const SERVER_RECT_HEIGHT = 80;
+        const SERVER_RECT_WIDTH = 60; // Fixed width of server boxes
+        const SERVER_RECT_HEIGHT = 80; // Fixed height of server boxes
         const SERVER_X_POS = SYSTEM_BORDER_X + SYSTEM_BORDER_WIDTH - SERVER_RECT_WIDTH - 80;
+        const SERVER_VERTICAL_GAP = 20; // Fixed vertical gap between servers
 
         // Position of customer when they are 'at' a server (to the left of the server box)
         const CUSTOMER_AT_SERVER_OFFSET_X = CUSTOMER_RADIUS + 10;
@@ -616,9 +619,9 @@
          */
         function drawServer(index) {
             // Calculate vertical position to center servers if multiple
-            const totalServersHeight = numServers * SERVER_RECT_HEIGHT + (numServers - 1) * 20;
+            const totalServersHeight = numServers * SERVER_RECT_HEIGHT + (numServers - 1) * SERVER_VERTICAL_GAP;
             const serverGroupTopY = CENTER_LINE_Y - (totalServersHeight / 2);
-            const serverY = serverGroupTopY + (index * (SERVER_RECT_HEIGHT + 20));
+            const serverY = serverGroupTopY + (index * (SERVER_RECT_HEIGHT + SERVER_VERTICAL_GAP));
 
             const rect = document.createElementNS(SVG_NS, 'rect');
             rect.setAttribute('x', SERVER_X_POS);
@@ -727,18 +730,18 @@
                                 customer.element.style.transition = 'none';
                                 customer.textElement.style.transition = 'none';
                                 customer.element.style.transform = 'translate(0,0)'; // Clear transform
-                                customer.textElement.style.transform = 'translate(0,0)';
+                                customer.textElement.style.transform = 'none'; // Clear transform for text as well
                                 customer.element.setAttribute('cx', targetX); // Set final position as attributes
                                 customer.element.setAttribute('cy', targetY);
                                 customer.textElement.setAttribute('x', targetX);
-                                customer.textElement.setAttribute('y', targetY + 5);
+                                customer.textElement.setAttribute('y', targetY + 5); 
                             }, { once: true });
                         } else {
                             // If at correct position and no animation, ensure attributes are set
                             customer.element.setAttribute('cx', targetX);
                             customer.element.setAttribute('cy', targetY);
                             customer.textElement.setAttribute('x', targetX);
-                            customer.textElement.setAttribute('y', targetY + 5);
+                            customer.textElement.setAttribute('y', targetY + 5); 
                         }
                     }
                 }
@@ -752,9 +755,9 @@
          * @returns {number} The Y-coordinate for the center of the server.
          */
         function calculateServerYCenter(index) {
-            const totalServersHeight = numServers * SERVER_RECT_HEIGHT + (numServers - 1) * 20;
+            const totalServersHeight = numServers * SERVER_RECT_HEIGHT + (numServers - 1) * SERVER_VERTICAL_GAP;
             const serverGroupTopY = CENTER_LINE_Y - (totalServersHeight / 2);
-            return serverGroupTopY + (index * (SERVER_RECT_HEIGHT + 20)) + SERVER_RECT_HEIGHT / 2;
+            return serverGroupTopY + (index * (SERVER_RECT_HEIGHT + SERVER_VERTICAL_GAP)) + SERVER_RECT_HEIGHT / 2;
         }
 
         /**
@@ -772,6 +775,7 @@
             const circle = document.createElementNS(SVG_NS, 'circle');
             circle.setAttribute('cx', x);
             circle.setAttribute('cy', y);
+            circle.setAttribute('r', CUSTOMER_RADIUS); // Use fixed radius
             circle.classList.add('customer-circle');
             if (extraClass) circle.classList.add(extraClass);
             circle.setAttribute('id', `customer-circle-${customer.id}`);
@@ -780,7 +784,7 @@
 
             const text = document.createElementNS(SVG_NS, 'text');
             text.setAttribute('x', x);
-            text.setAttribute('y', y + 5); /* Adjust Y to center text vertically in circle */
+            text.setAttribute('y', y + 5); 
             text.setAttribute('text-anchor', 'middle'); /* Center text horizontally */
             text.textContent = customer.id;
             text.classList.add('customer-text');
@@ -821,7 +825,7 @@
             element.setAttribute('cx', initialX);
             element.setAttribute('cy', initialY);
             textElement.setAttribute('x', initialX);
-            textElement.setAttribute('y', initialY + 5);
+            textElement.setAttribute('y', initialY + 5); 
 
             // Set CSS variables for keyframe calculations (used in @keyframes rules)
             element.style.setProperty('--initial-x', `${initialX}`);
@@ -876,7 +880,7 @@
                 customer.element.setAttribute('cx', targetX);
                 customer.element.setAttribute('cy', targetY);
                 customer.textElement.setAttribute('x', targetX);
-                customer.textElement.setAttribute('y', targetY + 5);
+                customer.textElement.setAttribute('y', targetY + 5); 
                 customer.element.style.transform = 'none';
                 customer.textElement.style.transform = 'none';
             }, { once: true });
@@ -888,7 +892,7 @@
          * @param {number} serverId - The index of the server the customer is moving to.
          */
         function animateCustomerToService(customer, serverId) {
-            const serverY = calculateServerYCenter(serverId); // Corrected function name
+            const serverY = calculateServerYCenter(serverId);
 
             const currentX = parseFloat(customer.element.getAttribute('cx'));
             const currentY = parseFloat(customer.element.getAttribute('cy'));
@@ -896,7 +900,7 @@
             animateElement(
                 customer.element, customer.textElement,
                 currentX, currentY,
-                CUSTOMER_AT_SERVER_X, serverY,
+                CUSTOMER_AT_SERVER_X, serverY, // Use fixed X for server position
                 'moveToService', 0.5
             );
 
@@ -909,7 +913,7 @@
                 customer.element.setAttribute('cx', CUSTOMER_AT_SERVER_X);
                 customer.element.setAttribute('cy', serverY);
                 customer.textElement.setAttribute('x', CUSTOMER_AT_SERVER_X);
-                customer.textElement.setAttribute('y', serverY + 5);
+                customer.textElement.setAttribute('y', serverY + 5); 
                 customer.element.style.transform = 'none';
                 customer.textElement.style.transform = 'none';
             }, { once: true });
@@ -929,7 +933,7 @@
                 animateElement(
                     customer.element, customer.textElement,
                     currentX, currentY,
-                    CUSTOMER_PRE_EXIT_X, CUSTOMER_PRE_EXIT_Y,
+                    CUSTOMER_PRE_EXIT_X, CUSTOMER_PRE_EXIT_Y, // Use fixed X for pre-exit
                     'moveToService', 0.5
                 );
 
@@ -940,7 +944,7 @@
                     customer.element.setAttribute('cx', CUSTOMER_PRE_EXIT_X);
                     customer.element.setAttribute('cy', CUSTOMER_PRE_EXIT_Y);
                     customer.textElement.setAttribute('x', CUSTOMER_PRE_EXIT_X);
-                    customer.textElement.setAttribute('y', CUSTOMER_PRE_EXIT_Y + 5);
+                    customer.textElement.setAttribute('y', CUSTOMER_PRE_EXIT_Y + 5); 
                     customer.element.style.transform = 'none';
                     customer.textElement.style.transform = 'none';
 
@@ -948,7 +952,7 @@
                     animateElement(
                         customer.element, customer.textElement,
                         CUSTOMER_PRE_EXIT_X, CUSTOMER_PRE_EXIT_Y,
-                        CUSTOMER_EXIT_OFFSCREEN_X, CUSTOMER_EXIT_OFFSCREEN_Y,
+                        CUSTOMER_EXIT_OFFSCREEN_X, CUSTOMER_EXIT_OFFSCREEN_Y, // Use fixed X for off-screen exit
                         'leavePath', 1.0 // Longer duration for exit
                     );
 
@@ -972,21 +976,6 @@
          * Calculates averages and utilization based on accumulated data.
          */
         function updateMetrics() {
-            // Update time-weighted sums for Lq and L
-            const timePassedSinceLastUpdate = currentTime - lastMetricUpdateTime;
-            if (timePassedSinceLastUpdate > 0) {
-                totalCustomersInQueueArea += customersInQueue.length * timePassedSinceLastUpdate;
-                totalCustomersInSystemArea += (customersInQueue.length + servers.filter(s => s.busy).length) * timePassedSinceLastUpdate;
-                
-                // Accumulate server busy time for utilization
-                servers.forEach(server => {
-                    if (server.busy) {
-                        totalSystemBusyTime += timePassedSinceLastUpdate;
-                    }
-                });
-            }
-            lastMetricUpdateTime = currentTime; // Update last update time for next calculation
-
             // Display current state metrics
             currentTimeDisplay.textContent = currentTime.toFixed(2);
             const busyServersCount = servers.filter(s => s.busy).length;
@@ -1036,6 +1025,10 @@
         function initializeServers() {
             servers = [];
             serversGroup.innerHTML = ''; // Clear any existing server visuals
+
+            // Calculate total height needed for servers to center them vertically
+            const totalServersHeight = numServers * SERVER_RECT_HEIGHT + (numServers - 1) * SERVER_VERTICAL_GAP;
+            const serverGroupTopY = CENTER_LINE_Y - (totalServersHeight / 2);
 
             for (let i = 0; i < numServers; i++) {
                 servers.push({ busy: false, customer: null, busyStartTime: null });
@@ -1129,7 +1122,7 @@
             totalSystemBusyTime = 0;
             totalCustomersInQueueArea = 0;
             totalCustomersInSystemArea = 0;
-            lastMetricUpdateTime = 0;
+            lastMetricUpdateTime = 0; // Reset last update time for metrics
 
             // Remove all dynamic customer elements from the SVG canvas
             const allCustomerElementsOnCanvas = simulationCanvas.querySelectorAll('.customer-circle, .customer-text');
@@ -1173,14 +1166,15 @@
                 return; // Exit the function
             }
 
-            // Calculate time passed since the last event to update time-weighted metrics
-            const timePassed = eventQueue[0].time - currentTime;
+            const nextEventTime = eventQueue[0].time;
+            const timePassed = nextEventTime - currentTime; // This is the duration since the last event processed
+
+            // Accumulate metrics for the interval just passed (from currentTime to nextEventTime)
+            // The system state (queue length, busy servers) remained constant during this 'timePassed' interval.
             if (timePassed > 0) {
-                // Accumulate metrics for time-weighted averages
                 totalCustomersInQueueArea += customersInQueue.length * timePassed;
                 totalCustomersInSystemArea += (customersInQueue.length + servers.filter(s => s.busy).length) * timePassed;
                 
-                // Accumulate busy time for server utilization
                 servers.forEach(server => {
                     if (server.busy) {
                         totalSystemBusyTime += timePassed;
@@ -1188,8 +1182,9 @@
                 });
             }
 
-            const nextEvent = eventQueue.shift(); // Get the next event and remove it
-            currentTime = nextEvent.time; // Advance simulation time to this event's time
+            // Process the next event
+            const nextEvent = eventQueue.shift();
+            currentTime = nextEvent.time; // Advance simulation time
 
             // Process the event based on its type
             switch (nextEvent.type) {
@@ -1201,8 +1196,10 @@
                     break;
             }
             
-            updateMetrics(); // Update UI metrics after processing the event
-            updateVisualization(); // Update UI visualization after processing the event
+            // Now call updateMetrics to display the calculated values based on the accumulated totals
+            // and the current simulation time.
+            updateMetrics();
+            updateVisualization();
         }
 
         // --- Event Listeners and Initial Setup ---
